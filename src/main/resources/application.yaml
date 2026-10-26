@@ -1,0 +1,44 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: gateway-service
+  config:
+    import: "optional:configserver:http://localhost:8888"
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: auth-service-route
+            uri: http://localhost:8082
+            predicates:
+              - Path=/api/v1/cinema/auth/**
+          # Rutas dinámicas: lb://<nombre en Eureka>. Una por recurso del monolito para no
+          # solaparse con /api/v1/cinema/auth/** ni /api/v1/cinema/user/** (Auth Service).
+          - id: cinema-theater-route
+            uri: lb://cinema-ciencias
+            predicates:
+              - Path=/api/v1/cinema/theater/**
+          - id: cinema-movie-screening-route
+            uri: lb://cinema-ciencias
+            predicates:
+              - Path=/api/v1/cinema/movie-screening/**
+          - id: cinema-ticket-route
+            uri: lb://cinema-ciencias
+            predicates:
+              - Path=/api/v1/cinema/ticket/**
+          - id: cinema-reservation-route
+            uri: lb://cinema-ciencias
+            predicates:
+              - Path=/api/v1/cinema/reservation/**
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# Los niveles de log del Gateway los sirve el Config Server (shared-config/gateway-service.yml).
